@@ -1,0 +1,5 @@
+export class ScareVideo{
+ constructor(video,{schedule=(fn,ms)=>globalThis.setTimeout(fn,ms),cancel=id=>globalThis.clearTimeout(id)}={}){this.video=video;this.schedule=schedule;this.cancel=cancel;this.generation=0;this.timer=null;this.active=false;}
+ stop(){this.generation++;this.active=false;this.cancel(this.timer);this.timer=null;this.video.onplaying=this.video.onended=this.video.onerror=null;this.video.pause();this.video.hidden=true;}
+ play({onStart,onEnd,onFallback}){this.stop();const generation=this.generation;this.active=true;let started=false;const current=()=>generation===this.generation&&this.active;const fallback=()=>{if(!current())return;this.stop();onFallback();};const end=()=>{if(!current())return;this.stop();onEnd();};this.video.muted=true;this.video.playsInline=true;this.video.hidden=false;this.video.onplaying=()=>{if(!current()||started)return;started=true;this.cancel(this.timer);this.timer=this.schedule(end,12000);onStart();};this.video.onended=end;this.video.onerror=fallback;this.timer=this.schedule(fallback,6000);try{this.video.currentTime=0;const pending=this.video.play();pending?.catch(fallback);}catch{fallback();}}
+}

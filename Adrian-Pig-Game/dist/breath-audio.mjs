@@ -1,0 +1,9 @@
+export const BREATH_AUDIO_URLS=[1,2,3].map(n=>new URL(`./assets/audio/breath-${n}.mp3`,import.meta.url).href);
+export function preloadBreathing(fetcher=fetch){return Promise.all(BREATH_AUDIO_URLS.map(async url=>{try{const r=await fetcher(url);if(!r.ok)throw new Error(`Audio HTTP ${r.status}`);return await r.arrayBuffer();}catch(e){console.warn('Breathing recording unavailable',url,e);return null;}}));}
+export function breathingVariation(g){return g.exhausted?3:g.isSprinting?2:1;}
+export class BreathAudio{
+ constructor(context,destination,data){this.context=context;this.destination=destination;this.buffers=[];this.current=null;this.voices=new Set();this.ready=data.then(async bytes=>{this.buffers=await Promise.all(bytes.map(async b=>{try{return b?await context.decodeAudioData(b.slice(0)):null;}catch(e){console.warn('Breathing decode failed',e);return null;}}));});}
+ update(g){const variation=breathingVariation(g),buffer=this.buffers[variation-1];if(!buffer||this.current?.variation===variation)return;const t=this.context.currentTime;if(this.current){const old=this.current;old.gain.gain.cancelScheduledValues(t);old.gain.gain.setValueAtTime(old.volume,t);old.gain.gain.linearRampToValueAtTime(0,t+.35);old.source.stop(t+.36);}
+ const source=this.context.createBufferSource(),gain=this.context.createGain(),volume=[.17,.26,.34][variation-1];source.buffer=buffer;source.loop=true;gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(volume,t+.35);source.connect(gain);gain.connect(this.destination);const voice={source,gain,variation,volume};this.current=voice;this.voices.add(voice);source.onended=()=>{source.disconnect();gain.disconnect();this.voices.delete(voice);if(this.current===voice)this.current=null;};source.start();}
+ stop(){for(const v of this.voices){v.source.stop();v.gain.disconnect();}this.voices.clear();this.current=null;}
+}

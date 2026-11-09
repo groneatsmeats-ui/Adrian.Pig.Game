@@ -1,0 +1,16 @@
+{
+  "name": "swine-nightshift",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node core.test.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "three": "^0.187.0"
+  }
+}
